@@ -6,7 +6,7 @@ from streamlit_folium import st_folium
 import folium
 
 # Load dataset df_combined dari file CSV
-df_combined = pd.read_csv("../combined_data.csv", parse_dates=["datetime"])
+df_combined = pd.read_csv("dashboard/combined_data.csv", parse_dates=["datetime"])
 df_combined.head()
 
 st.title("Dashboard Analisis Polusi Udara Beijing")
