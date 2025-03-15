@@ -1,3 +1,5 @@
+# Proyek Analisis Data
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -5,83 +7,112 @@ import seaborn as sns
 from streamlit_folium import st_folium
 import folium
 
-# Load dataset df_combined dari file CSV
-df_combined = pd.read_csv("dashboard/combined_data.csv", parse_dates=["datetime"])
-df_combined.head()
+# Custom CSS untuk tema warna dashboard
+st.markdown(
+    """
+    <style>
+    /* background utama dengan gradasi biru muda dan abu-abu */
+    .reportview-container {
+        background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+    }
+    /* Ubah sidebar background */
+    .sidebar .sidebar-content {
+        background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+    }
+    /* metric card */
+    .stMetric {
+        background-color: #ffffff;
+        border: 1px solid #d9e2ec;
+        border-radius: 10px;
+        padding: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
+# Load dataset 
+df_combined = pd.read_csv("../dashboard/combined_data.csv", parse_dates=["datetime"])
 
 st.title("Dashboard Analisis Polusi Udara Beijing")
 
+# Scorecard 
+st.markdown("### Total Data dan Indikator Utama")
+# SIDEBAR: Filter Data
+st.sidebar.header("Filter Data")
+# Filter rentang tanggal
+start_date = st.sidebar.date_input("Mulai", value=pd.to_datetime("2013-03-01"))
+end_date = st.sidebar.date_input("Selesai", value=pd.to_datetime("2017-02-28"))
+# Filter stasiun dengan opsi "Semua"
+station_option = st.sidebar.selectbox("Pilih Stasiun", ["Semua"] + list(df_combined["station"].unique()))
+
+# Terapkan filter tanggal
+df_filtered = df_combined[(df_combined["datetime"] >= pd.to_datetime(start_date)) & 
+                          (df_combined["datetime"] <= pd.to_datetime(end_date))]
+# Terapkan filter stasiun jika tidak memilih "Semua"
+if station_option != "Semua":
+    df_filtered = df_filtered[df_filtered["station"] == station_option]
+
+# Tampilkan scorecard dengan metric
+col1, col2, col3 = st.columns(3)
+col1.metric("Total Data", df_filtered.shape[0])
+col2.metric("Rata-rata PM2.5", f"{df_filtered['PM2.5'].mean():.2f} µg/m³")
+col3.metric("Rata-rata PM10", f"{df_filtered['PM10'].mean():.2f} µg/m³")
+
+# VISUALISASI 1: Perbandingan Tingkat Polusi dengan Bar Chart
 st.header("Perbandingan Tingkat Polusi")
-st.subheader("Distribusi PM2.5 dan PM10 antara Aotizhongxin dan Changping")
+st.subheader("Rata-rata PM2.5 dan PM10 Berdasarkan Stasiun")
+# Hitung rata-rata untuk masing-masing stasiun
+avg_values = df_filtered.groupby("station")[["PM2.5", "PM10"]].mean().reset_index()
 
-fig1, ax1 = plt.subplots(figsize=(10,6))
-sns.boxplot(x='station', y='PM2.5', data=df_combined, palette='Set2', ax=ax1)
-ax1.set_title("Distribusi PM2.5")
-ax1.set_xlabel("Stasiun")
-ax1.set_ylabel("PM2.5 (µg/m³)")
-st.pyplot(fig1)
+fig, ax = plt.subplots(figsize=(10,6))
+width = 0.35  # lebar bar
+x = range(len(avg_values))
+ax.bar(x, avg_values["PM2.5"], width, label="PM2.5", color="#4a90e2")
+ax.bar([p + width for p in x], avg_values["PM10"], width, label="PM10", color="#50e3c2")
+ax.set_xticks([p + width/2 for p in x])
+ax.set_xticklabels(avg_values["station"])
+ax.set_title("Rata-rata Konsentrasi Polusi per Stasiun")
+ax.set_xlabel("Stasiun")
+ax.set_ylabel("Rata-rata Konsentrasi (µg/m³)")
+ax.legend()
+st.pyplot(fig)
 
-fig2, ax2 = plt.subplots(figsize=(10,6))
-sns.boxplot(x='station', y='PM10', data=df_combined, palette='Set2', ax=ax2)
-ax2.set_title("Distribusi PM10")
-ax2.set_xlabel("Stasiun")
-ax2.set_ylabel("PM10 (µg/m³)")
+# VISUALISASI 2: Tren Waktu PM2.5 dengan Line Chart
+st.header("Tren Waktu PM2.5")
+fig2, ax2 = plt.subplots(figsize=(12,5))
+sns.lineplot(data=df_filtered, x="datetime", y="PM2.5", hue="station", ax=ax2, marker="o", palette="Set1")
+ax2.set_title(f"Tren PM2.5 dari {start_date} sampai {end_date}")
+ax2.set_xlabel("Waktu")
+ax2.set_ylabel("PM2.5 (µg/m³)")
+plt.xticks(rotation=45)
 st.pyplot(fig2)
 
-st.header("Tren Waktu PM2.5")
-fig3, ax3 = plt.subplots(figsize=(12,5))
-sns.lineplot(data=df_combined, x="datetime", y="PM2.5", hue="station", ax=ax3)
-ax3.set_title("Tren PM2.5 pada Waktu Tertentu")
-plt.xticks(rotation=45)
-st.pyplot(fig3)
-
+# VISUALISASI 3: Analisis Geospasial dengan Folium
 st.header("Analisis Geospasial")
 st.subheader("Peta Distribusi Polusi (PM2.5)")
-
-# Buat peta dasar Folium, misalnya dengan pusat di Beijing
+# Buat peta dasar Folium (pusat di Beijing)
 m = folium.Map(location=[39.9, 116.4], zoom_start=10)
 
-# Misalnya, kita ingin menampilkan marker yang menunjukkan rata-rata PM2.5 per stasiun
+# Koordinat untuk masing-masing stasiun (dimasukkan secara manual)
 locations = {
     "Aotizhongxin": [39.982, 116.417],
     "Changping": [40.218, 116.231]
 }
 
-avg_pm25 = df_combined.groupby("station")["PM2.5"].mean()
-
+# Hitung rata-rata PM2.5 per stasiun berdasarkan data yang sudah difilter
+avg_pm25 = df_filtered.groupby("station")["PM2.5"].mean()
+# Tambahkan marker ke peta untuk setiap stasiun yang ada pada data yang difilter
 for station, coords in locations.items():
-    folium.CircleMarker(
-        location=coords,
-        radius=avg_pm25[station] / 10,  # Sesuaikan skala radius
-        popup=f"{station}: {avg_pm25[station]:.2f} µg/m³",
-        color="red",
-        fill=True,
-        fill_color="red",
-        fill_opacity=0.6
-    ).add_to(m)
+    if station in avg_pm25.index:
+        folium.CircleMarker(
+            location=coords,
+            radius=avg_pm25[station] / 10,  # Sesuaikan skala radius
+            popup=f"{station}: {avg_pm25[station]:.2f} µg/m³",
+            color="red",
+            fill=True,
+            fill_color="red",
+            fill_opacity=0.6
+        ).add_to(m)
 
-# Tampilkan peta di dashboard dengan st_folium
+# Tampilkan peta menggunakan st_folium
 st_folium(m, width=700, height=500)
-
-st.sidebar.header("Filter Data")
-
-# Misalnya, filter berdasarkan stasiun
-station_option = st.sidebar.selectbox("Pilih Stasiun", df_combined["station"].unique())
-df_filtered = df_combined[df_combined["station"] == station_option]
-
-st.sidebar.write("Jumlah data:", df_filtered.shape[0])
-
-# Tampilkan diagram berdasarkan pilihan
-st.subheader(f"Data Polusi untuk Stasiun: {station_option}")
-fig4, ax4 = plt.subplots(figsize=(10,6))
-sns.boxplot(x='station', y='PM2.5', data=df_filtered, palette='Set2', ax=ax4)
-ax4.set_title(f"Distribusi PM2.5 di {station_option}")
-st.pyplot(fig4)
-
-st.sidebar.header("Filter Waktu")
-start_date = st.sidebar.date_input("Mulai", value=pd.to_datetime("2013-03-01"))
-end_date = st.sidebar.date_input("Selesai", value=pd.to_datetime("2017-02-28"))
-
-df_filtered_time = df_combined[(df_combined["datetime"] >= pd.to_datetime(start_date)) & 
-                               (df_combined["datetime"] <= pd.to_datetime(end_date))]
-st.write("Jumlah data setelah filter waktu:", df_filtered_time.shape[0])
