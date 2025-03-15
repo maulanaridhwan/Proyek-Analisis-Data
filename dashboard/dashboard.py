@@ -11,24 +11,21 @@ import folium
 st.markdown(
     """
     <style>
-    /* background utama dengan gradasi biru muda dan abu-abu */
-    .reportview-container {
-        background: linear-gradient(to right, #f0f4f8, #d9e2ec);
-    }
-    /* Ubah sidebar background */
-    .sidebar .sidebar-content {
-        background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
-    }
-    /* metric card dengan background biru muda */
+    /* Atur tampilan scorecard: background putih, teks biru muda */
     .stMetric {
-        background-color: #ADD8E6;
+        background-color: #ffffff !important;
         border: 1px solid #d9e2ec;
         border-radius: 10px;
         padding: 10px;
     }
+    /* Target elemen teks di dalam scorecard */
+    .stMetric * {
+        color: #ADD8E6 !important;
+    }
     </style>
     """, unsafe_allow_html=True
 )
+
 
 # Load dataset 
 df_combined = pd.read_csv("dashboard/combined_data.csv", parse_dates=["datetime"])
