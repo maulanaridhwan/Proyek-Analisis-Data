@@ -19,9 +19,9 @@ st.markdown(
     .sidebar .sidebar-content {
         background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
     }
-    /* metric card */
+    /* metric card dengan background biru muda */
     .stMetric {
-        background-color: #ffffff;
+        background-color: #ADD8E6;
         border: 1px solid #d9e2ec;
         border-radius: 10px;
         padding: 10px;
