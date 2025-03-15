@@ -11,7 +11,7 @@ import folium
 st.markdown(
     """
     <style>
-    /* Atur tampilan scorecard: background putih, teks biru muda */
+    /* Atur tampilan scorecard: background putih, teks biru */
     .stMetric {
         background-color: #ffffff !important;
         border: 1px solid #d9e2ec;
@@ -20,7 +20,7 @@ st.markdown(
     }
     /* Target elemen teks di dalam scorecard */
     .stMetric * {
-        color: #ADD8E6 !important;
+        color: #187bcd !important;
     }
     </style>
     """, unsafe_allow_html=True
