@@ -34,7 +34,7 @@ st.markdown(
 )
 
 # Load dataset 
-df_combined = pd.read_csv("../dashboard/combined_data.csv", parse_dates=["datetime"])
+df_combined = pd.read_csv("dashboard/combined_data.csv", parse_dates=["datetime"])
 
 st.title("Dashboard Analisis Polusi Udara Beijing")
 
