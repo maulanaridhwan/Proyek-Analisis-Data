@@ -1,4 +1,4 @@
-#
+# proyek analisis data
 
 import streamlit as st
 import pandas as pd
@@ -57,7 +57,7 @@ col1.metric("Total Data", df_filtered.shape[0])
 col2.metric("Rata-rata PM2.5", f"{df_filtered['PM2.5'].mean():.2f} µg/m³")
 col3.metric("Rata-rata PM10", f"{df_filtered['PM10'].mean():.2f} µg/m³")
 
-# VISUALISASI 1: Bar Chart Perbandingan Rata-rata Polusi (Pertanyaan 1)
+# VISUALISASI: Bar Chart Perbandingan Rata-rata Polusi (Pertanyaan 1)
 st.header("Perbandingan Tingkat Polusi")
 st.subheader("Rata-rata PM2.5 dan PM10 Berdasarkan Stasiun")
 avg_values = df_filtered.groupby("station")[["PM2.5", "PM10"]].mean().reset_index()
@@ -75,7 +75,17 @@ ax1.set_ylabel("Rata-rata Konsentrasi (µg/m³)")
 ax1.legend()
 st.pyplot(fig1)
 
-# VISUALISASI 2: Scatter Plot Hubungan Kondisi Cuaca dengan Polusi (Pertanyaan 2)
+# VISUALISASI: Tren Waktu PM2.5 dengan Line Chart
+st.header("Tren Waktu PM2.5")
+fig2, ax2 = plt.subplots(figsize=(12,5))
+sns.lineplot(data=df_filtered, x="datetime", y="PM2.5", hue="station", ax=ax2, marker="o", palette="Set1")
+ax2.set_title(f"Tren PM2.5 dari {start_date} sampai {end_date}")
+ax2.set_xlabel("Waktu")
+ax2.set_ylabel("PM2.5 (µg/m³)")
+plt.xticks(rotation=45)
+st.pyplot(fig2)
+
+# VISUALISASI: Scatter Plot Hubungan Kondisi Cuaca dengan Polusi (Pertanyaan 2)
 st.header("Pengaruh Kondisi Cuaca terhadap Polusi")
 
 # Scatter Plot: Kecepatan Angin vs PM2.5
